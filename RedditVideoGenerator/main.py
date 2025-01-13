@@ -12,9 +12,15 @@ import ffmpeg
 import reddit, screenshot, time, subprocess, random, configparser, sys, math, youtube
 from os import listdir
 import moviepy as mpe
+from PIL import Image
+from moviepy.video.fx.resize import resize
+from moviepy.editor import VideoFileClip
+from moviepy.editor import AudioFileClip
+from moviepy.audio.AudioClip import CompositeAudioClip
+
 from os.path import isfile, join
 from youtube import upload_video
-@tool("createVideo")
+#@tool("createVideo")
 def createVideo():
     """
     Use this tool when prompted to make a video or reddit video, if you need to choose an option for a reddit
@@ -56,12 +62,19 @@ def createVideo():
     backgroundVideo = VideoFileClip("backgroundvid/SpicySauce Parkour 01.mp4")
     w, h = backgroundVideo.size
 
+
     def __createClip(screenShotFile, audioClip, marginSize):
         imageClip = ImageClip(
             screenShotFile,
             duration=audioClip.duration
             ).set_position(("center", "center"))
         imageClip = imageClip.resize(width=(w-marginSize))
+        #imageClip = resize(ImageClip, w-marginSize)
+
+
+        #pil_image = Image.open(screenShotFile)
+       # resized_image = pil_image.resize((w, h), resample=Image.Resampling.LANCZOS)
+        #imageClip = imageClip.resize(width=(w - marginSize), resample=Image.Resampling.LANCZOS)
         videoClip = imageClip.set_audio(audioClip)
         videoClip.fps = 1
         return videoClip
@@ -84,16 +97,16 @@ def createVideo():
         clips.append(__createClip(comment.screenShotFile, comment.audioClip, marginSize))
     print("c")
     # Merge clips into single track
-    contentOverlay = concatenate_videoclips(clips).with_position(("center", "center"))
+    contentOverlay = concatenate_videoclips(clips).set_position(("center", "center"))
     print("a")
     # Compose background/foreground
     final = CompositeVideoClip(
         clips=[backgroundVideo, contentOverlay], 
-        size=backgroundVideo.size).with_audio(contentOverlay.audio)
+        size=backgroundVideo.size).set_audio(contentOverlay.audio)
     print("a")
     final.duration = script.getDuration()
     print("a")
-    final.with_fps(backgroundVideo.fps)
+    final.set_fps(backgroundVideo.fps)
     print("d")
     # Write output to file
     print("Rendering final video...")
@@ -110,30 +123,24 @@ def createVideo():
     endTime = time.time()
     print(f"Total time: {endTime - startTime}")
     #upload_video("reddit video", "video description", outputFile)
-    my_clip = mpe.VideoFileClip(outputFile)
-    audio_background = mpe.AudioFileClip('backgroundvid/summer-memories-270159.mp3')
-    final_audio = mpe.CompositeAudioClip([my_clip.audio, audio_background])
+    my_clip = VideoFileClip(outputFile)
+    audio_background = AudioFileClip('backgroundvid/summer-memories-270159.mp3')
+    background_audio_adjusted = audio_background.subclip(0, my_clip.duration)
+
+    final_audio = CompositeAudioClip([my_clip.audio, background_audio_adjusted])
     final_clip = my_clip.set_audio(final_audio)
+    final_clip.write_videofile(f"outputvid/{fileName}(audio).mp4")
+
     print(final_clip)
     aai.settings.api_key = "2895823538bb48229386bb84312dc133"
 
     transcriber = aai.Transcriber()
     import pysubs2
-    transcript = transcriber.transcribe("outputvid/output1.mp4")
+    transcript = transcriber.transcribe(f"outputvid/{fileName}(audio).mp4")
     srt = transcript.export_subtitles_srt()
-
-    def adjust_subtitle_timing(input_srt, output_srt, offset_ms):
-        subs = pysubs2.load(input_srt, encoding="utf-8")
-        for line in subs:
-            line.start += offset_ms
-            line.end += offset_ms
-        subs.save(output_srt)
 
     with open("subtitles.srt", "w") as f:
         f.write(srt)
-
-    # adjust_subtitle_timing("subtitles.srt", "adjusted_subtitles.srt", -50)
-
     def group_words_in_srt(input_srt, output_ass):
         subs = pysubs2.load(input_srt, encoding="utf-8")
         new_events = []
@@ -162,6 +169,7 @@ def createVideo():
 
     aai.settings.api_key = "2895823538bb48229386bb84312dc133"
 
+
     def add_subtitles(video_file, srt_file, output_file):
         # Command to burn subtitles into the video
         command = [
@@ -172,10 +180,16 @@ def createVideo():
         ]
         subprocess.run(command, check=True)
         print(f"Subtitles added and saved to {output_file}")
+    def sanitize_filename(filename):
+        # Remove invalid characters entirely
+        return ''.join(c for c in filename if c not in '<>:"/\\|?*')
 
-    video_path = final_clip
+    # Sanitize the title
+    sanitized_title = sanitize_filename(title)
+
+    video_path = f"outputvid/{fileName}(audio).mp4"
     srt_path = "subtitles.srt"
-    output_path = f"output/{title}.mp4"
+    output_path = f"output/{sanitized_title}.mp4"
 
     add_subtitles(video_path, srt_path, output_path)
 
@@ -194,5 +208,5 @@ def createVideo():
     endTime = time.time()
     print(f"Total time: {endTime - startTime}")'''
 
-#if __name__ == "__main__":
-    #createVideo()
+if __name__ == "__main__":
+    createVideo()
