@@ -10,8 +10,9 @@ For creating the videos, I used MoviePy.
 
 To run this code, navigate to AgentTeam and run the video_maker_team_assembly.py file.
 
-How does this work:
-Before anything, set up API keys in define_vars and config.ini aswell as downloading a chromedriver and chromium that matches each other [here](https://googlechromelabs.github.io/chrome-for-testing/), while adding the paths in youtube.py (make sure they are also in your system path) This can be shown below:
+How to run:
+
+Before anything, pip install requirements.txt and set up API keys in define_vars and config.ini aswell as downloading a chromedriver and chromium that matches each other [here](https://googlechromelabs.github.io/chrome-for-testing/), while adding the paths in youtube.py (make sure they are also in your system path) This can be shown below:
 ![image](https://github.com/user-attachments/assets/88b37c90-5e2f-4095-b273-4cf5d1a40279)
 
 
